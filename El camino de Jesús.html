@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El camino de Jesús RPG</title>
+<style>
+:root{--pn:rgba(14,18,48,.95);--gold:#e0a526;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pn:rgba(8,10,28,.96)}}
+:root[data-theme="dark"]{--pn:rgba(8,10,28,.96)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#6fa456;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);color:#fff;font-weight:800;font-size:14px;pointer-events:none;display:flex;flex-direction:column;gap:5px}
+.row{display:flex;justify-content:space-between;gap:6px}
+.pill{background:rgba(14,18,48,.78);border:2px solid var(--gold);border-radius:14px;padding:5px 11px}
+#mu{position:fixed;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);width:42px;height:42px;border-radius:50%;border:2px solid var(--gold);background:var(--pn);font-size:19px}
+#pn{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);max-width:560px;margin:0 auto;background:var(--pn);border:3px solid var(--gold);border-radius:16px;padding:14px 14px 12px;color:#fff;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);font-family:ui-monospace,"Courier New",monospace}
+#nm{position:absolute;top:-17px;left:14px;background:var(--gold);color:#2a1d00;font-weight:800;padding:3px 12px;border-radius:10px;font-size:14px}
+#tx{font-size:16px;line-height:1.5;min-height:72px}
+#nx{display:none;text-align:right;color:var(--gold);font-weight:800;font-size:14px;animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.3}}
+.opt{display:block;width:100%;margin-top:8px;padding:11px;border-radius:12px;border:2px solid #7f8bd1;background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:15px;text-align:left}
+.opt.ok{background:#2e9e5b;border-color:#8fe3b0}
+.opt.bad{background:#d64545;border-color:#ffa5a5}
+#end{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:radial-gradient(#ffe9a8,#e8a94a);color:#3a2400;text-align:center;padding:24px}
+#end h1{margin:0;font-size:30px}#end p{margin:0;font-size:19px}
+#end button{padding:14px 28px;border-radius:16px;border:0;border-bottom:4px solid rgba(0,0,0,.3);background:#2b3a8f;color:#fff;font-size:18px;font-weight:800}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud"><div class="row"><span class="pill" id="h1"></span><span class="pill" id="h2"></span></div><div class="row"><span class="pill" id="h3" style="font-size:13px"></span></div><div class="row"><span class="pill" id="h4"></span></div></div>
+<button id="mu">🔊</button>
+<div id="pn"><div id="nm"></div><div id="tx"></div><div id="ch"></div><div id="nx">Toca para continuar ▶</div></div>
+<div id="end"><div style="font-size:60px" id="es"></div><h1>¡Misión cumplida!</h1><p id="ep"></p><p>Jesús vive. ¡Gracias por recorrer el camino!</p><button id="ag">Jugar de nuevo</button></div>
+<script>
+(function(){
+var TS=32,WW=640,WH=896,LK={x:192,y:352,w:256,h:160};
+var LOC=[
+{n:'Belén',x:10,y:25,d:'🏠⭐',who:'Pastor Eli',e:'🧑‍🌾',it:'⭐ Estrella de Belén',
+ t:['¡Peregrino! Qué bueno que llegas a Belén. Esta noche vi algo maravilloso.','Cuidaba mis ovejas cuando un ángel dijo: «Les traigo una gran alegría: hoy nació el Salvador». Antes, el ángel Gabriel le había anunciado a María que sería su mamá.','Corrimos y lo encontramos en un pesebre, con María y José. Luego unos sabios de Oriente lo visitaron, guiados por una estrella.'],
+ q:[{q:'¿En qué ciudad nació Jesús?',o:['Belén','Jerusalén','Roma'],a:0,x:'Jesús nació en Belén.'},{q:'¿Quién anunció a María que sería la mamá de Jesús?',o:['El ángel Gabriel','Un pastor','El rey Herodes'],a:0,x:'Fue el ángel Gabriel.'},{q:'¿Qué guió a los sabios de Oriente?',o:['Una estrella','Un río','Un pastor'],a:0,x:'Los guió una estrella.'}]},
+{n:'Betania',x:5,y:19,d:'🏘️🪨',who:'Marta',e:'👩',it:'🪨 Piedra de Betania',
+ t:['Soy Marta. Mi hermano Lázaro se enfermó y murió. Cuando Jesús llegó, ya llevaba cuatro días en la tumba y todos llorábamos.','Jesús también lloró con nosotros. Fue a la tumba, mandó quitar la piedra y gritó: «¡Lázaro, sal fuera!».','¡Y Lázaro salió vivo! Mi hermana María y yo no podíamos creerlo.'],
+ q:[{q:'¿Cuántos días llevaba Lázaro en la tumba?',o:['Uno','Cuatro','Diez'],a:1,x:'Llevaba cuatro días.'},{q:'¿Cómo se llamaban las hermanas de Lázaro?',o:['Ana y Sara','Marta y María','Rut y Ester'],a:1,x:'Marta y María.'},{q:'¿Qué hizo Jesús al ver a todos tan tristes?',o:['Se fue','Lloró con ellos','Se enojó'],a:1,x:'Jesús lloró con ellos.'}]},
+{n:'Mar de Galilea',x:15,y:13,d:'⛵',who:'Pedro',e:'🧔',it:'🎣 Red de pescador',
+ t:['Yo era pescador junto con mi hermano Andrés, aquí en el mar de Galilea.','Un día Jesús nos dijo: «Síganme, y los haré pescadores de personas». Dejamos las redes y lo seguimos.','Jesús eligió a doce amigos, los apóstoles. Uno de ellos, Judas Iscariote, lo traicionó, y eso nos dolió mucho.'],
+ q:[{q:'¿Cuántos apóstoles eligió Jesús?',o:['Siete','Doce','Veinte'],a:1,x:'Eligió a doce.'},{q:'¿Qué oficio tenían Pedro y Andrés?',o:['Pescadores','Carpinteros','Pastores'],a:0,x:'Eran pescadores.'},{q:'¿Quién traicionó a Jesús?',o:['Pedro','Juan','Judas Iscariote'],a:2,x:'Fue Judas Iscariote.'}]},
+{n:'El Gólgota',x:5,y:8,d:'⛰️✝️',who:'Juan',e:'🧑',it:'✝️ Cruz del perdón',
+ t:['Estuve aquí, al pie de la cruz. Jesús oró en Getsemaní y fue arrestado. Pilato, el gobernador romano, lo condenó aunque era inocente.','Lo crucificaron en este monte, el Gólgota, entre dos ladrones. Fue un día muy oscuro.','Desde la cruz dijo: «Padre, perdónalos, porque no saben lo que hacen». Murió por amor a todos.'],
+ q:[{q:'¿Cómo se llama el monte donde crucificaron a Jesús?',o:['Gólgota (Calvario)','Monte Sinaí','Monte Carmelo'],a:0,x:'Fue en el Gólgota.'},{q:'¿Qué pidió Jesús desde la cruz?',o:['Castigo','Perdón para ellos','Agua'],a:1,x:'Pidió perdón para ellos.'},{q:'¿Quién era el gobernador romano que lo condenó?',o:['Herodes','Pilato','César'],a:1,x:'Fue Poncio Pilato.'}]},
+{n:'La tumba vacía',x:10,y:3,d:'🪨✨',who:'Ángel',e:'👼',it:'🌅 Luz de la Pascua',
+ t:['José de Arimatea puso a Jesús en una tumba nueva y cerró la entrada con una gran piedra.','Al tercer día, muy temprano, vinieron María Magdalena y otras mujeres. ¡La piedra estaba removida!','Les dije: «No está aquí, ha resucitado». ¡Jesús vive! Esa es la gran alegría de la Pascua.'],
+ q:[{q:'¿Cuándo resucitó Jesús?',o:['Al tercer día','Esa misma noche','A los diez días'],a:0,x:'Resucitó al tercer día.'},{q:'¿Qué encontraron las mujeres en la tumba?',o:['Soldados','La tumba vacía','Un tesoro'],a:1,x:'La tumba estaba vacía.'},{q:'¿Qué día de la semana resucitó Jesús?',o:['Viernes','Sábado','Domingo'],a:2,x:'El domingo, primer día de la semana.'}]}
+];
+var RANK=['Peregrino','Discípulo','Seguidor','Testigo','Mensajero'];
+var PATH=[[10,27],[10,25],[5,19],[15,17],[15,13],[15,10],[5,8],[10,3]].map(function(p){return[p[0]*TS+16,p[1]*TS+16]});
+var $=function(i){return document.getElementById(i)},cv=$('c'),ctx=cv.getContext('2d'),dpr=1,z=1;
+var world=document.createElement('canvas');world.width=WW;world.height=WH;
+var P,q,hp,xp,good,items,dlg,kx=0,ky=0,pv=null,lt=0,AC=null,mute=false,mt=null,mi=0;
+function fit(){dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;z=Math.min(cv.width/(11*TS),cv.height/(14*TS))}
+addEventListener('resize',fit);fit();
+function rnd(n){var s=n;return function(){s=(s*16807)%2147483647;return s/2147483647}}
+function dseg(px,py,a,b){var dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(px-a[0]-t*dx,py-a[1]-t*dy)}
+function mk(){
+ var g=world.getContext('2d'),r=rnd(7),i;
+ var gr=g.createLinearGradient(0,0,0,WH);gr.addColorStop(0,'#cfe3a0');gr.addColorStop(.2,'#b9a77f');gr.addColorStop(.36,'#a99578');gr.addColorStop(.45,'#9bbf72');gr.addColorStop(.7,'#86b563');gr.addColorStop(1,'#6fa456');
+ g.fillStyle=gr;g.fillRect(0,0,WW,WH);
+ for(i=0;i<900;i++){g.fillStyle=i%2?'rgba(0,0,0,.07)':'rgba(255,255,255,.1)';g.fillRect(r()*WW,r()*WH,3,2)}
+ g.fillStyle='#3b8fd0';g.beginPath();g.roundRect?g.roundRect(LK.x,LK.y,LK.w,LK.h,40):g.rect(LK.x,LK.y,LK.w,LK.h);g.fill();g.strokeStyle='#e3cf95';g.lineWidth=6;g.stroke();
+ g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=2;for(i=0;i<9;i++){g.beginPath();var wx=LK.x+20+r()*(LK.w-60),wy=LK.y+20+r()*(LK.h-40);g.moveTo(wx,wy);g.quadraticCurveTo(wx+8,wy-5,wx+16,wy);g.stroke()}
+ g.lineJoin='round';g.lineCap='round';g.beginPath();PATH.forEach(function(p,k){k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])});
+ g.strokeStyle='#bfa66a';g.lineWidth=34;g.stroke();g.strokeStyle='#e7d29a';g.lineWidth=26;g.stroke();
+ g.font='26px serif';g.textAlign='center';g.textBaseline='middle';
+ for(i=0;i<130;i++){var x=r()*WW,y=r()*WH,ok=!(x>LK.x-20&&x<LK.x+LK.w+20&&y>LK.y-20&&y<LK.y+LK.h+20);
+  for(var k=0;k<PATH.length-1&&ok;k++)if(dseg(x,y,PATH[k],PATH[k+1])<40)ok=false;
+  if(ok)g.fillText(y<330?(y<160?'🌸':'🪨'):['🌳','🌲','🌳','🌼'][i%4],x,y)}
+ g.font='30px serif';LOC.forEach(function(L){g.fillText(L.d,L.x*TS-28,L.y*TS-4)});
+ g.fillText('✝️',4*TS,6*TS);g.fillText('✝️',7*TS,6*TS);g.fillText('🐑',8*TS,26*TS);g.fillText('🐑',12*TS,27*TS);
+}
+function npcPos(i){return[(LOC[i].x+1)*TS+16,LOC[i].y*TS+16]}
+function au(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}return AC&&!mute}
+function tone(f,t,ty,v,f2){if(!au())return;var o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.type=ty||'triangle';o.frequency.setValueAtTime(f,n);if(f2)o.frequency.setValueAtTime(f2,n+t/2);g.gain.setValueAtTime(v||.2,n);g.gain.exponentialRampToValueAtTime(.001,n+t);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+t)}
+function music(){if(mt||mute)return;var n=[0,4,7,12,9,7,4,2];mt=setInterval(function(){tone(196*Math.pow(2,n[mi++%8]/12),.9,'sine',.07)},520)}
+$('mu').onclick=function(){mute=!mute;this.textContent=mute?'🔇':'🔊';if(mute){clearInterval(mt);mt=null}else{au();music()}};
+function hud(){$('h1').textContent=(hp>0?'❤️'.repeat(hp):'')+'🖤'.repeat(3-hp)+'  '+RANK[Math.min(q,4)];$('h2').textContent='✨ '+xp+' XP';
+ $('h3').textContent=q<5?'Misión: habla con '+LOC[q].who+' en '+LOC[q].n:'¡Misión cumplida!';$('h4').textContent=items.length?items.map(function(s){return s.split(' ')[0]}).join(' '):'Mochila vacía'}
+var tmr,full='',ready=true,after=null;
+function say(t,cont){full=t;ready=false;after=cont;var i=0;$('tx').textContent='';clearInterval(tmr);$('nx').style.display='none';tmr=setInterval(function(){i++;$('tx').textContent=full.slice(0,i);if(i>=full.length)fin()},18)}
+function fin(){clearInterval(tmr);$('tx').textContent=full;ready=true;if(after)$('nx').style.display='block'}
+$('pn').addEventListener('click',function(e){if(e.target.classList.contains('opt'))return;if(!ready){fin();return}if(after){var a=after;after=null;$('nx').style.display='none';a()}});
+function open(name,t,cont){dlg=true;pv=null;$('pn').style.display='block';$('nm').textContent=name;$('ch').innerHTML='';say(t,cont)}
+function close(){dlg=false;$('pn').style.display='none';hud();if(q>=5)finish()}
+function talk(){var L=LOC[q];var pg=function(k){$('ch').innerHTML='';if(k<L.t.length)say(L.t[k],function(){pg(k+1)});else ask(0)};open(L.who+' · '+L.n,L.t[0],function(){pg(1)})}
+function ask(k){var L=LOC[q],Q=L.q[k],box=$('ch'),ans=false;box.innerHTML='';say('⚔️ Prueba '+(k+1)+'/3: '+Q.q,null);
+ Q.o.map(function(t,i){return{t:t,r:i===Q.a}}).sort(function(){return Math.random()-.5}).forEach(function(o){var b=document.createElement('button');b.className='opt';b.textContent=o.t;
+  b.onclick=function(){if(ans)return;ans=true;[].forEach.call(box.children,function(el,i){});var msg;
+   if(o.r){xp+=20;good++;tone(660,.25,'triangle',.25,990);b.classList.add('ok');msg='¡Correcto! +20 XP. '+Q.x}
+   else{hp--;tone(220,.3,'sawtooth',.15,160);b.classList.add('bad');msg='Casi. '+Q.x+(hp<=0?' Descansas y recuperas tus vidas.':'');if(hp<=0)hp=3}
+   hud();say(msg,function(){k<2?ask(k+1):reward()})};box.appendChild(b)})}
+function reward(){var L=LOC[q];items.push(L.it);xp+=50;q++;tone(523,.6,'triangle',.25,784);hud();open('¡Recompensa!','Obtienes: '+L.it+' (+50 XP). '+(q<5?'Ahora sigue el camino hacia '+LOC[q].n+'.':'¡Has llegado al final del camino!'),close)}
+function finish(){var st=good>=14?3:good>=10?2:1;$('es').textContent='⭐'.repeat(st);$('ep').textContent=good+' de 15 respuestas correctas a la primera · '+xp+' XP';$('end').style.display='flex'}
+function reset(){P={x:10*TS+16,y:26*TS+16};q=0;hp=3;xp=0;good=0;items=[];dlg=false;$('end').style.display='none';hud();open('Narrador','Bienvenido, peregrino. Sigue el camino de arena y habla con quienes vieron la vida de Jesús. Mira la flecha dorada: te guía. Arrastra el dedo para caminar.',close)}
+$('ag').onclick=reset;
+cv.addEventListener('pointerdown',function(e){au();music();if(dlg)return;pv={sx:e.clientX*dpr,sy:e.clientY*dpr,x:e.clientX*dpr,y:e.clientY*dpr};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',function(e){if(pv){pv.x=e.clientX*dpr;pv.y=e.clientY*dpr}});
+['pointerup','pointercancel'].forEach(function(t){cv.addEventListener(t,function(){pv=null})});
+addEventListener('keydown',function(e){au();music();var k=e.key;if(k==='ArrowLeft'||k==='a')kx=-1;if(k==='ArrowRight'||k==='d')kx=1;if(k==='ArrowUp'||k==='w')ky=-1;if(k==='ArrowDown'||k==='s')ky=1});
+addEventListener('keyup',function(e){var k=e.key;if(k==='ArrowLeft'||k==='a'||k==='ArrowRight'||k==='d')kx=0;if(k==='ArrowUp'||k==='w'||k==='ArrowDown'||k==='s')ky=0});
+function blocked(x,y){return x<10||x>WW-10||y<10||y>WH-10||(x>LK.x-8&&x<LK.x+LK.w+8&&y>LK.y-8&&y<LK.y+LK.h+8)}
+function upd(dt){if(dlg)return;var dx=kx,dy=ky;if(pv){var vx=pv.x-pv.sx,vy=pv.y-pv.sy,l=Math.hypot(vx,vy);if(l>10*dpr){dx=vx/l;dy=vy/l}}
+ var l2=Math.hypot(dx,dy);if(l2>0){dx/=Math.max(1,l2);dy/=Math.max(1,l2);var nx=P.x+dx*115*dt,ny=P.y+dy*115*dt;if(!blocked(nx,P.y))P.x=nx;if(!blocked(P.x,ny))P.y=ny;P.m=true}else P.m=false;
+ if(q<5){var n=npcPos(q);if(Math.hypot(P.x-n[0],P.y-n[1])<46){pv=null;talk()}}}
+function draw(t){
+ ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#6fa456';ctx.fillRect(0,0,cv.width,cv.height);
+ var vw=cv.width/z,vh=cv.height/z,cx=vw>=WW?(WW-vw)/2:Math.max(0,Math.min(P.x-vw/2,WW-vw)),cy=vh>=WH?(WH-vh)/2:Math.max(0,Math.min(P.y-vh/2,WH-vh));
+ ctx.setTransform(z,0,0,z,-cx*z,-cy*z);ctx.drawImage(world,0,0);ctx.textAlign='center';ctx.textBaseline='middle';
+ for(var i=0;i<5;i++){var n=npcPos(i),b=Math.sin(t/300+i)*2;ctx.globalAlpha=i<=q?1:.45;ctx.font='28px serif';ctx.fillText(LOC[i].e,n[0],n[1]+b);
+  ctx.font='16px serif';ctx.fillText(i<q?'✔️':i===q?'❗':'🔒',n[0],n[1]-24+b);ctx.globalAlpha=1}
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(P.x,P.y+13,10,4,0,0,7);ctx.fill();
+ ctx.font='28px serif';ctx.fillText('🧒',P.x,P.y+(P.m?Math.sin(t/70)*2:0));
+ if(q<5&&!dlg){var n2=npcPos(q),a=Math.atan2(n2[1]-P.y,n2[0]-P.x);ctx.save();ctx.translate(P.x+Math.cos(a)*34,P.y+Math.sin(a)*34);ctx.rotate(a);ctx.fillStyle='#ffcf33';ctx.strokeStyle='#7a5200';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(9,0);ctx.lineTo(-5,-7);ctx.lineTo(-5,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+ ctx.setTransform(1,0,0,1,0,0);
+ var g8=LOC[3],d=Math.hypot(P.x-g8.x*TS,P.y-g8.y*TS),al=.5*Math.max(0,Math.min(1,1-d/280));if(al>0){ctx.fillStyle='rgba(10,10,40,'+al+')';ctx.fillRect(0,0,cv.width,cv.height)}
+ if(q>=4){ctx.fillStyle='rgba(255,210,120,.18)';ctx.fillRect(0,0,cv.width,cv.height)}
+ if(pv){var vx=pv.x-pv.sx,vy=pv.y-pv.sy,l=Math.min(Math.hypot(vx,vy),50*dpr),an=Math.atan2(vy,vx);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3*dpr;ctx.beginPath();ctx.arc(pv.sx,pv.sy,50*dpr,0,7);ctx.stroke();ctx.fillStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.arc(pv.sx+Math.cos(an)*l,pv.sy+Math.sin(an)*l,16*dpr,0,7);ctx.fill()}
+}
+function loop(t){var dt=Math.min(.05,(t-lt)/1000);lt=t;upd(dt);draw(t);requestAnimationFrame(loop)}
+mk();reset();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
